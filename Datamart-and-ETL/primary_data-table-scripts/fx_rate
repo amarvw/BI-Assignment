@@ -1,0 +1,48 @@
+USE [HQAssignment]
+GO
+
+/****** Object:  Table [primary_data].[fx_rate]    Script Date: 11/15/15 2:12:55 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [primary_data].[fx_rate](
+	[id] [int] NOT NULL,
+	[prim_currency_id] [int] NULL,
+	[scnd_currency_id] [int] NULL,
+	[date] [date] NULL,
+	[currency_rate] [decimal](24, 6) NULL,
+ CONSTRAINT [pk_id] PRIMARY KEY CLUSTERED 
+(
+	[id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+
+/****** Object:  Index [idx_fx_rate_1]    Script Date: 11/15/15 2:12:55 PM ******/
+CREATE NONCLUSTERED INDEX [idx_fx_rate_1] ON [primary_data].[fx_rate]
+(
+	[prim_currency_id] ASC,
+	[scnd_currency_id] ASC,
+	[date] DESC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
+
+ALTER TABLE [primary_data].[fx_rate]  WITH CHECK ADD  CONSTRAINT [fk_prim_currency_id] FOREIGN KEY([prim_currency_id])
+REFERENCES [primary_data].[lst_currency] ([id])
+GO
+
+ALTER TABLE [primary_data].[fx_rate] CHECK CONSTRAINT [fk_prim_currency_id]
+GO
+
+ALTER TABLE [primary_data].[fx_rate]  WITH CHECK ADD  CONSTRAINT [fk_scnd_currency_id] FOREIGN KEY([scnd_currency_id])
+REFERENCES [primary_data].[lst_currency] ([id])
+GO
+
+ALTER TABLE [primary_data].[fx_rate] CHECK CONSTRAINT [fk_scnd_currency_id]
+GO
+
+
