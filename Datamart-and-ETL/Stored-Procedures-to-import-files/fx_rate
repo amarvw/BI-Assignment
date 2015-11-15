@@ -1,0 +1,116 @@
+USE [HQAssignment]
+GO
+
+/****** Object:  StoredProcedure [primary_data].[insert_fx_rate]    Script Date: 11/15/15 2:17:01 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+
+
+CREATE PROCEDURE [primary_data].[insert_fx_rate]
+AS
+BEGIN
+
+	SET NOCOUNT ON;
+
+	/* variable and temp table declarations */
+
+	DECLARE @fileName			VARCHAR(50)			= 'fx_rate.csv'
+		   ,@filepath			VARCHAR(800)
+		   ,@fullFilePath		VARCHAR(850)
+		   ,@bulkInsertCommand	VARCHAR(MAX)
+
+	IF OBJECT_ID('tempdb..#temp_fx_rate') IS NOT NULL
+		DROP TABLE #temp_fx_rate.csv 
+
+	CREATE TABLE #temp_fx_rate
+	(
+	 id						VARCHAR(30)
+	,prim_currency_id		VARCHAR(30)
+	,scnd_currency_id		VARCHAR(30)
+	,[date]					VARCHAR(30)
+	,currency_rate			VARCHAR(30)	
+	)
+
+	CREATE CLUSTERED INDEX idx_temp_fx_rate_1 ON #temp_fx_rate (id ASC)
+
+	BEGIN TRY
+
+	/*	getting the required filepath */
+
+	SELECT @filepath = filePath
+	FROM primary_data.fileNamesAndPaths (NOLOCK)
+	WHERE [fileName] = 'fx_rate.csv'
+
+	/*	concatenating the filepath and the filename	*/
+	SET @fullFilePath = @filepath + @fileName
+
+
+	/*	creating the dynamic statement 	*/
+	SET @bulkInsertCommand = 'BULK INSERT #temp_fx_rate 
+							FROM '''+@fullFilePath+'''
+							WITH 
+							(
+							 FIELDTERMINATOR = '',''
+							,ROWTERMINATOR = ''0x0a''
+							)'
+
+	EXEC (@bulkInsertCommand)
+
+	/*	delete the first record */
+
+	DELETE FROM #temp_fx_rate
+	WHERE id = '"id"'
+
+	/*	replacing the double quotes	*/
+
+	UPDATE #temp_fx_rate
+	SET [date] = CASE WHEN [date] = 'NULL' THEN NULL ELSE REPLACE([date],'"','') END			
+	
+	/* inserting if any new reords, considering id as the primary key */
+
+	INSERT INTO primary_data.fx_rate
+	(
+	 id						
+	,prim_currency_id		
+	,scnd_currency_id		
+	,[date]					
+	,currency_rate			
+	)
+	SELECT temp.id
+	,temp.prim_currency_id
+	,temp.scnd_currency_id
+	,temp.[date]
+	,temp.currency_rate
+	FROM #temp_fx_rate  AS temp  (NOLOCK) 
+	LEFT OUTER JOIN primary_data.fx_rate AS fxRate (NOLOCK)
+		ON temp.id = fxRate.id									--  considering id column as the primary key
+	WHERE fxRate.id IS NULL
+
+	DROP TABLE #temp_fx_rate
+
+	END TRY
+	BEGIN CATCH	
+		
+		PRINT('fx_rate.csv bulk upload failed,please check')
+		RETURN(-1)
+
+	END CATCH 
+
+	RETURN (0)
+END
+
+
+
+
+
+
+GO
+
+
