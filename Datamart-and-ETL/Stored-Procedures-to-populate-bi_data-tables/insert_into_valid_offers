@@ -1,0 +1,73 @@
+USE [HQAssignment]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE PROCEDURE [bi_data].[insert_into_valid_offers]
+AS
+BEGIN
+
+	SET NOCOUNT ON;
+
+	BEGIN TRY
+
+	/*	the query */
+
+	INSERT INTO bi_data.valid_offers
+	(
+	offer_id
+	,hotel_id
+	,hotel_name
+	,price_usd
+	,original_price
+	,original_currency_code
+	,breakfast_included_flag
+	,valid_from_date
+	,valid_to_date
+	)
+	SELECT priOffer.id
+		,priOffer.hotel_id
+		,NULL AS hotelName
+		,priOffer.sellings_price * fxRate.currency_rate AS price_usd
+		,priOffer.sellings_price AS original_price
+		,prilstCurr.code AS original_currency_code
+		,priOffer.breakfast_included_flag
+		,priOffer.offer_valid_from
+		,priOffer.offer_valid_to
+	FROM primary_data.offer AS priOffer (NOLOCK)
+	INNER JOIN primary_data.lst_currency AS prilstCurr (NOLOCK)
+		ON priOffer.currency_id = prilstCurr.id								-- to get the original_currency_code
+		AND priOffer.valid_offer_flag = 1									-- to filter the records where we have an offer
+	INNER JOIN primary_data.fx_rate AS fxRate (NOLOCK)	
+		ON priOffer.currency_id = fxRate.prim_currency_id					-- need to find the conversion rate for the primary currency
+		AND priOffer.offer_valid_from = fxRate.[date]						-- conversion is always specific to the date, the offer was given, hence date
+		AND fxRate.scnd_currency_id = 1										-- we need to always convert it to USD, USD having currency id = 1
+	LEFT OUTER JOIN bi_data.valid_offers AS perm (NOLOCK)
+		ON priOffer.id = perm.offer_id										-- skip the already added records
+	WHERE perm.offer_id IS NULL
+	AND priOffer.sellings_price IS NOT NULL									-- cannot convert NULL selling price, nor can it be zero
+
+	END TRY
+	BEGIN CATCH	
+		
+		PRINT('Insert into bi_data.valid_offers failed, please check')
+		RETURN(-1)
+
+	END CATCH 
+
+	RETURN (0)
+END
+
+
+
+
+
+
+GO
+
+
