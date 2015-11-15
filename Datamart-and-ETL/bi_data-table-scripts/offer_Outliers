@@ -1,0 +1,71 @@
+USE [HQAssignment]
+GO
+
+/****** Object:  Table [bi_data].[offer_Outliers]    Script Date: 11/15/15 2:15:39 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+SET ANSI_PADDING ON
+GO
+
+CREATE TABLE [bi_data].[offer_Outliers](
+	[tblID] [int] IDENTITY(1,1) NOT NULL,
+	[id] [int] NOT NULL,
+	[hotel_id] [int] NULL,
+	[currency_id] [int] NULL,
+	[source_system_code] [varchar](50) NULL,
+	[available_cnt] [int] NULL,
+	[sellings_price] [float] NULL,
+	[checkin_date] [date] NULL,
+	[checkout_date] [date] NULL,
+	[valid_offer_flag] [bit] NULL,
+	[offer_valid_from] [datetime] NULL,
+	[offer_valid_to] [datetime] NULL,
+	[breakfast_included_flag] [bit] NULL,
+	[insert_datetime] [datetime] NULL,
+	[comment] [varchar](100) NULL,
+ CONSTRAINT [pk_offer_Outlier_id] PRIMARY KEY CLUSTERED 
+(
+	[tblID] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+
+SET ANSI_PADDING OFF
+GO
+
+/****** Object:  Index [idx_offer__Outlier2]    Script Date: 11/15/15 2:15:39 PM ******/
+CREATE NONCLUSTERED INDEX [idx_offer__Outlier2] ON [bi_data].[offer_Outliers]
+(
+	[hotel_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
+
+/****** Object:  Index [idx_offer_Outlier_1]    Script Date: 11/15/15 2:15:39 PM ******/
+CREATE NONCLUSTERED INDEX [idx_offer_Outlier_1] ON [bi_data].[offer_Outliers]
+(
+	[valid_offer_flag] DESC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
+
+/****** Object:  Index [idx_offer_Outlier_3]    Script Date: 11/15/15 2:15:39 PM ******/
+CREATE NONCLUSTERED INDEX [idx_offer_Outlier_3] ON [bi_data].[offer_Outliers]
+(
+	[hotel_id] ASC,
+	[checkin_date] DESC,
+	[checkout_date] DESC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, SORT_IN_TEMPDB = OFF, DROP_EXISTING = OFF, ONLINE = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+GO
+
+ALTER TABLE [bi_data].[offer_Outliers]  WITH CHECK ADD  CONSTRAINT [fk_curreny_id_outlier] FOREIGN KEY([currency_id])
+REFERENCES [primary_data].[lst_currency] ([id])
+GO
+
+ALTER TABLE [bi_data].[offer_Outliers] CHECK CONSTRAINT [fk_curreny_id_outlier]
+GO
+
+
