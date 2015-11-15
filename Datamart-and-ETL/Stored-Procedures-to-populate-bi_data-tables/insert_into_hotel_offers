@@ -1,0 +1,123 @@
+USE [HQAssignment]
+GO
+
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+CREATE PROCEDURE [bi_data].[insert_into_hotel_offers]
+AS
+BEGIN
+
+	SET NOCOUNT ON;
+
+	IF OBJECT_ID('tempdb..#temp_DateAndHour') IS NOT NULL
+	DROP TABLE #temp_DateAndHour
+
+	CREATE TABLE #temp_DateAndHour
+	(
+	DateWithHour  DATETIME
+	)
+
+	CREATE CLUSTERED INDEX idx_temp_DateAndHour_1 ON  #temp_DateAndHour (DateWithHour ASC)
+
+	BEGIN TRY
+
+	/*  SCRIPT TO INSERT INTO THE HOTEL OFFERS TABLE  */
+
+	INSERT INTO #temp_DateAndHour
+	(
+	DateWithHour
+	)
+	/*	found out the min date from the offer table	*/
+	VALUES ('2013-03-30 00:00:00.000')					
+	
+	/*
+	SELECT MAX(offer_valid_from)
+	FROM primary_data.offer (NOLOCK)
+	WHERE valid_offer_flag = 1
+	AND  DATEDIFF(DAY,offer_valid_from,offer_valid_to)  <= 14
+	AND offer_valid_from < offer_valid_to
+	*/
+
+	/*
+	recursion to generate all possible time with hour values
+	the max value as per the data is '2015-11-27', hence the max value in the temp
+	table is 2015-11-30
+	*/
+
+	;WITH cte_DateWithHour AS (
+	SELECT  DateWithHour
+	FROM #temp_DateAndHour
+	UNION ALL
+	SELECT DATEADD(HOUR,1,DateWithHour)
+	FROM cte_DateWithHour s
+	WHERE DateWithHour <= '2015-11-30 00:00:00'
+	)
+
+	INSERT INTO #temp_DateAndHour
+	(
+	DateWithHour
+	)
+	SELECT DateWithHour
+	FROM cte_DateWithHour
+	OPTION (MAXRECURSION  25000)
+
+	/*	delete duplicate recod, used to start the recusrion	*/
+	DELETE  FROM  #temp_DateAndHour
+	WHERE DateWithHour = '2013-03-30 00:00:00.000'
+
+	/*	insert it back once */
+	INSERT INTO #temp_DateAndHour
+	(
+	DateWithHour
+	)
+	/*	found out the min date from the offer table	*/
+	VALUES ('2013-03-30 00:00:00.000')	
+
+	/*	insert part		*/
+	INSERT INTO bi_data.hotel_offers
+	(
+	hotel_id
+	,[date]
+	,[hour]
+	,breakfast_included_flag
+	,valid_offer_available_flag
+	)
+	SELECT DISTINCT  hotel_id
+	,CONVERT(DATE,temp.DateWithHour) AS [date]
+	,DATEPART(HOUR,temp.DateWithHour) AS [hour]
+	,priOffers.breakfast_included_flag
+	,CASE WHEN temp.DateWithHour BETWEEN priOffers.offer_valid_from AND priOffers.offer_valid_to THEN 1				-- when the time is between the valid from and to, then 1 else 0
+			ELSE 0 END AS valid_offer_available_flag
+	FROM primary_data.offer AS priOffers (NOLOCK)
+	CROSS JOIN #temp_DateAndHour AS temp (NOLOCK)																	-- cross join for one to many
+	WHERE valid_offer_flag = 1
+	AND  DATEDIFF(DAY,offer_valid_from,offer_valid_to)  <= 14														/* after studying the data, found out date difference between valid offer
+																													  from and to can be upto 14,some outliers do exists */
+	AND CONVERT(DATE,temp.DateWithHour) BETWEEN CONVERT(DATE,priOffers.offer_valid_from) AND CONVERT(DATE,priOffers.offer_valid_to)	
+
+	DROP TABLE #temp_DateAndHour
+
+	END TRY
+	BEGIN CATCH	
+		
+		PRINT('Insert into bi_data.hotel_offers failed, please check')
+		RETURN(-1)
+
+	END CATCH 
+
+	RETURN (0)
+END
+
+
+
+
+
+
+GO
+
+
