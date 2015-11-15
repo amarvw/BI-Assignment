@@ -1,0 +1,110 @@
+USE [HQAssignment]
+GO
+
+/****** Object:  StoredProcedure [primary_data].[insert_lst_currency]    Script Date: 11/15/15 2:17:44 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+
+
+CREATE PROCEDURE [primary_data].[insert_lst_currency]
+AS
+BEGIN
+
+	SET NOCOUNT ON;
+
+	/* variable and temp table declarations */
+
+	DECLARE @fileName			VARCHAR(50)			= 'lst_currency.csv'
+		   ,@filepath			VARCHAR(800)
+		   ,@fullFilePath		VARCHAR(850)
+		   ,@bulkInsertCommand	VARCHAR(MAX)
+
+	IF OBJECT_ID('tempdb..#temp_lst_currency') IS NOT NULL
+		DROP TABLE #temp_lst_currency 
+
+	CREATE TABLE #temp_lst_currency 
+	(
+	 id			INT
+	,code		VARCHAR(5)
+	,name		VARCHAR(500)
+	)
+
+	CREATE CLUSTERED INDEX idx_temp_lst_currency_1 ON #temp_lst_currency (id ASC)
+
+	BEGIN TRY
+
+	/*	getting the required filepath */
+
+	SELECT @filepath = filePath
+	FROM primary_data.fileNamesAndPaths (NOLOCK)
+	WHERE [fileName] = 'lst_currency.csv'
+
+	/*	concatenating the filepath and the filename	*/
+	SET @fullFilePath = @filepath + @fileName
+
+
+	/*	creating the dynamic statement 	*/
+	SET @bulkInsertCommand = 'BULK INSERT #temp_lst_currency 
+							FROM '''+@fullFilePath+'''
+							WITH 
+							(
+							 FIELDTERMINATOR = '',''
+							,ROWTERMINATOR = ''0x0a''
+							)'
+
+	EXEC (@bulkInsertCommand)
+
+	/*	replacing the double quotes	*/
+
+	UPDATE #temp_lst_currency
+	SET code = CASE WHEN code = 'NULL' THEN NULL ELSE REPLACE(code,'"','') END
+		,name = CASE WHEN name = 'NULL' THEN NULL ELSE REPLACE(name,'"','') END	
+	
+
+	/*	do delete the first record, which are column headers */
+
+	DELETE FROM #temp_lst_currency
+	WHERE code = '"code"'
+
+	/* inserting if any new reords, considering id as the primary key */
+
+	INSERT INTO primary_data.lst_currency
+	(
+	 id
+	,code
+	,name
+	)
+	SELECT temp.id
+	,temp.code
+	,temp.name
+	FROM #temp_lst_currency AS temp (NOLOCK)
+	LEFT OUTER JOIN primary_data.lst_currency AS lstCurr (NOLOCK)
+		ON temp.id = lstCurr.id
+	WHERE lstCurr.id IS NULL
+
+	DROP TABLE  #temp_lst_currency
+
+	END TRY
+	BEGIN CATCH	
+		
+		PRINT('lst_currency bulk uploda failed,please check')
+		RETURN(-1)
+
+	END CATCH 
+
+	RETURN (0)
+END
+
+
+
+
+GO
+
+
