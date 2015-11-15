@@ -1,7 +1,7 @@
 
 The order of looking at the files should be as follows :
 
-1.  Folder Name : Database and Schema creation scripts :
+1.  Folder Name : Database and Schema creation scripts :\n
 	The file contains script to create the DB named, "HQ Assignment" and the two schemans "primary_data" and "bi_data"
 	
 2.  Folder Name : primary_data-table-scripts :
