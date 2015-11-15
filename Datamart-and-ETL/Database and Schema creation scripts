@@ -1,0 +1,11 @@
+
+
+/*	create database for the Assignment */
+CREATE DATABASE HQAssignment;
+
+/*	create schemas for the Assignment		*/
+USE HQAssignment;
+GO
+CREATE SCHEMA primary_data;
+GO 
+CREATE SCHEMA bi_data;
