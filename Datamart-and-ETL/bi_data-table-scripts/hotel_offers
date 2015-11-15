@@ -1,0 +1,19 @@
+USE [HQAssignment]
+GO
+
+/****** Object:  Table [bi_data].[hotel_offers]    Script Date: 11/15/15 2:14:49 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+CREATE TABLE [bi_data].[hotel_offers](
+	[hotel_id] [int] NULL,
+	[date] [date] NULL,
+	[hour] [tinyint] NULL,
+	[breakfast_included_flag] [tinyint] NULL,
+	[valid_offer_available_flag] [tinyint] NULL
+) ON [PRIMARY]
+
+GO
