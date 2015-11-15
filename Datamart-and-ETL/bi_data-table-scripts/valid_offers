@@ -1,0 +1,35 @@
+USE [HQAssignment]
+GO
+
+/****** Object:  Table [bi_data].[valid_offers]    Script Date: 11/15/15 2:15:15 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+SET ANSI_PADDING ON
+GO
+
+CREATE TABLE [bi_data].[valid_offers](
+	[offer_id] [int] NOT NULL,
+	[hotel_id] [int] NULL,
+	[hotel_name] [varchar](255) NULL,
+	[price_usd] [float] NULL,
+	[original_price] [float] NULL,
+	[original_currency_code] [varchar](35) NULL,
+	[breakfast_included_flag] [tinyint] NULL,
+	[valid_from_date] [datetime] NULL,
+	[valid_to_date] [datetime] NULL,
+ CONSTRAINT [pk_valid_offers_offer_id] PRIMARY KEY CLUSTERED 
+(
+	[offer_id] ASC
+)WITH (PAD_INDEX = OFF, STATISTICS_NORECOMPUTE = OFF, IGNORE_DUP_KEY = OFF, ALLOW_ROW_LOCKS = ON, ALLOW_PAGE_LOCKS = ON) ON [PRIMARY]
+) ON [PRIMARY]
+
+GO
+
+SET ANSI_PADDING OFF
+GO
+
+
