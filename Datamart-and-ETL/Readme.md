@@ -5,12 +5,12 @@ The order of looking at the files should be as follows :
     * The file contains script to create the DB named, "HQ Assignment" and the two schemans "primary_data" and "bi_data"
     
 	
-2.  Folder Name : primary_data-table-scripts :
-	This folder has scripts along with all the keys and indexes
-	2a. fileNameAndPaths : This table is made to make the import process of files more dynamic. No need to hard code the path.
-	2b. fx_rate : The table creation script for the fx_rate, in the primary_data schema with all the required keys and indexes
-	2c. lst_currency : The table creation script for the lst_currency, in the primary_data schema with all the required keys         and indexes
-	2d. offer : The table creation script for the offer, in the primary_data schema with all the required keys and indexes
+2.  **Folder Name : primary_data-table-scripts :**
+    * This folder has scripts along with all the keys and indexes
+    * fileNameAndPaths : This table is made to make the import process of files more dynamic. No need to hard code the path.
+    * fx_rate : The table creation script for the fx_rate, in the primary_data schema with all the required keys and indexes
+    * lst_currency : The table creation script for the lst_currency, in the primary_data schema with all the required keys  	      and indexes
+    * offer : The table creation script for the offer, in the primary_data schema with all the required keys and indexes
 	
 3.  Folder Name : bi_data-table-scripts :
 	3a. hotel_offers : The table script as per the requirement 
