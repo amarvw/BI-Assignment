@@ -1,5 +1,5 @@
 
-The Data Cleaning process :
+##The Data Cleaning process :##
 
 From what I have seen in the offer.csv table, I have written the stored procedure
 to highlight such records. Also the table [bi_data].[offer_Outliers] has all the required data.
