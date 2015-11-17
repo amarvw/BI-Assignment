@@ -1,0 +1,361 @@
+USE [HQAssignment]
+GO
+
+/****** Object:  StoredProcedure [bi_data].[getHotelPriceOutliers]    Script Date: 11/17/15 5:40:05 PM ******/
+SET ANSI_NULLS ON
+GO
+
+SET QUOTED_IDENTIFIER ON
+GO
+
+
+
+
+
+
+
+CREATE PROCEDURE [bi_data].[getHotelPriceOutliers]
+ @forNumberOfDays		INT = 1
+,@minChange				DECIMAL(24,6)
+,@maxChange				DECIMAL(24,6)
+/*
+
+There are four conditons in which we can check the outliers for price change day after day
+Case 1 : When we have an offer as well as, breakfast is given
+Case 2 : When we have an offer ,but no breakfast
+Case 3 : When we have no offer, but have breakfast
+Case 4 : When we have no offer and no breakfast 
+
+Sample Execution :
+
+1. for checking outliers when the checkin and check out is in 1 day and change is out of 10 and -10
+
+ EXEC [bi_data].[getHotelPriceOutliers]
+	 @forNumberOfDays		INT = 1
+	,@minChange	= -10
+	,@maxChange	= 10
+
+
+2. 1. for checking outliers when the checkin and check out is in 2 day and change is out of 10 and -10
+
+ EXEC [bi_data].[getHotelPriceOutliers]
+	 @forNumberOfDays  = 2
+	,@minChange	= -10
+	,@maxChange	= 10
+
+
+*/
+
+AS
+BEGIN
+
+	SET NOCOUNT ON;
+
+	/* variable and temp table declarations */
+
+	/*case 1: For records where there is an offer as well as breaffast is included  */
+
+	IF OBJECT_ID('tempdb..#temp_checkOutlierWithBreakfastAndOffer') IS NOT NULL
+		DROP TABLE #temp_checkOutlierWithBreakfastAndOffer
+
+	CREATE TABLE #temp_checkOutlierWithBreakfastAndOffer
+	(
+	 tblID					INT		IDENTITY(1,1) 
+	,hotel_id				INT		
+	,currency_id			INT
+	,checkin_date			DATE
+	,checkout_date			DATE
+	,row_num				INT
+	,avgPriceWithBreakfast	DECIMAL(24,6)
+	CONSTRAINT pk_checkOutlierWithBreakfastAndOffer_tblID12 PRIMARY KEY (tblID)
+	)
+
+	CREATE NONCLUSTERED INDEX idx_temp_checkOutlierWithBreakfastAndOffer_1 ON #temp_checkOutlierWithBreakfastAndOffer(hotel_id ASC,currency_id ASC,row_num ASC)
+
+	/* case 2: For records where there is an offer but NO breaffast is included  */
+
+	
+	IF OBJECT_ID('tempdb..#temp_checkOutlierWithNoBreakfastAndOffer') IS NOT NULL
+		DROP TABLE #temp_checkOutlierWithNoBreakfastAndOffer
+
+	CREATE TABLE #temp_checkOutlierWithNoBreakfastAndOffer
+	(
+	 tblID					INT		IDENTITY(1,1) 
+	,hotel_id				INT		
+	,currency_id			INT
+	,checkin_date			DATE
+	,checkout_date			DATE
+	,row_num				INT
+	,avgPriceWithBreakfast	DECIMAL(24,6)
+	CONSTRAINT pk_checkOutlierWithNoBreakfastAndOffer_tblID12 PRIMARY KEY (tblID)
+	)
+
+	-- non clustered index, since I am using the same order in the join as well
+	CREATE NONCLUSTERED INDEX idx_#temp_checkOutlierWithNoBreakfastAndOffer_1 ON #temp_checkOutlierWithNoBreakfastAndOffer(hotel_id ASC,currency_id ASC,row_num ASC)
+
+	/*	case 3 : when there is no offer nor breakfast */
+
+	IF OBJECT_ID('tempdb..#temp_checkOutlierWithNoBreakfastAndNoOffer') IS NOT NULL
+		DROP TABLE #temp_checkOutlierWithNoBreakfastAndNoOffer
+
+	CREATE TABLE #temp_checkOutlierWithNoBreakfastAndNoOffer
+	(
+	 tblID					INT		IDENTITY(1,1) 
+	,hotel_id				INT		
+	,currency_id			INT
+	,checkin_date			DATE
+	,checkout_date			DATE
+	,row_num				INT
+	,avgPriceWithBreakfast	DECIMAL(24,6)
+	CONSTRAINT pk_checkOutlierWithNoBreakfastAndNoOffer_tblID12 PRIMARY KEY (tblID)
+	)
+
+	CREATE NONCLUSTERED INDEX idx_#temp_checkOutlierWithNoBreakfastAndNoOffer_1 ON #temp_checkOutlierWithNoBreakfastAndNoOffer(hotel_id ASC,currency_id ASC,row_num ASC)
+
+
+	/*	case 4 : When no offer, but incluudes breakfast */
+
+	IF OBJECT_ID('tempdb..#temp_checkOutlierWithBreakfastAndNoOffer') IS NOT NULL
+		DROP TABLE #temp_checkOutlierWithBreakfastAndNoOffer
+
+	CREATE TABLE #temp_checkOutlierWithBreakfastAndNoOffer
+	(
+	 tblID					INT		IDENTITY(1,1) 
+	,hotel_id				INT		
+	,currency_id			INT
+	,checkin_date			DATE
+	,checkout_date			DATE
+	,row_num				INT
+	,avgPriceWithBreakfast	DECIMAL(24,6)
+	CONSTRAINT pk_checkOutlierWithBreakfastAndNoOffer_tblID12 PRIMARY KEY (tblID)
+	)
+
+	CREATE NONCLUSTERED INDEX idx_#temp_checkOutlierWithBreakfastAndNoOffer_1 ON #temp_checkOutlierWithBreakfastAndNoOffer(hotel_id ASC,currency_id ASC,row_num ASC)
+
+	IF OBJECT_ID('tempdb..#temp_finalChange') IS NOT NULL
+		DROP TABLE #temp_finalChange
+
+	CREATE TABLE #temp_finalChange
+	(
+	 tblID					INT		IDENTITY(1,1) 
+	,hotel_id				INT		
+	,currency_id			INT
+	,checkin_date			DATE
+	,checkout_date			DATE
+	,row_num				INT
+	,AvgPriceForCase		DECIMAL(24,6)
+	,changePerCase			DECIMAL(24,6)
+	,fromSource				VARCHAR(50)
+	CONSTRAINT pk_temp_finalChange_tblID12 PRIMARY KEY (tblID)
+	)
+
+	CREATE NONCLUSTERED INDEX idx_temp_finalChange_1 ON #temp_finalChange(changePerCase DESC)
+
+	BEGIN TRY
+
+	/*	case 1 */
+
+	INSERT INTO #temp_checkOutlierWithBreakfastAndOffer
+	(
+	 hotel_id				
+	,currency_id				
+	,checkin_date			
+	,checkout_date			
+	,avgPriceWithBreakfast
+	,row_num				
+	)
+	SELECT hotel_id
+		  ,currency_id
+		  ,checkin_date
+		  ,checkout_date
+		  ,AVG(sellings_price) AS avgPriceWithBreakfast	  
+		  ,ROW_NUMBER() OVER (PARTITION BY hotel_id,currency_id ORDER BY checkin_date ASC) AS row_num	
+	FROM primary_data.offer (NOLOCK)
+	WHERE valid_offer_flag = 1
+	AND breakfast_included_flag = 1
+	AND DATEDIFF(DAY,checkin_date,checkout_date) = @forNumberOfDays
+	--AND hotel_id = 8075
+	GROUP BY hotel_id,currency_id,checkin_date,checkout_date
+	ORDER BY checkin_date
+
+
+	/*	condition 2	*/
+
+	INSERT INTO #temp_checkOutlierWithNoBreakfastAndOffer
+	(
+	 hotel_id				
+	,currency_id				
+	,checkin_date			
+	,checkout_date			
+	,avgPriceWithBreakfast
+	,row_num				
+	)
+	SELECT hotel_id
+		  ,currency_id
+		  ,checkin_date
+		  ,checkout_date
+		  ,AVG(sellings_price) AS avgPriceWithBreakfast	  
+		  ,ROW_NUMBER() OVER (PARTITION BY hotel_id,currency_id ORDER BY checkin_date ASC) AS row_num	
+	FROM primary_data.offer (NOLOCK)
+	WHERE valid_offer_flag = 1
+	AND breakfast_included_flag = 0
+	AND DATEDIFF(DAY,checkin_date,checkout_date) = @forNumberOfDays						
+--	AND hotel_id = 8075
+	GROUP BY hotel_id,currency_id,checkin_date,checkout_date
+	ORDER BY checkin_date
+	
+
+	/*  case 3 */
+
+	INSERT INTO #temp_checkOutlierWithNoBreakfastAndNoOffer
+	(
+	 hotel_id				
+	,currency_id				
+	,checkin_date			
+	,checkout_date			
+	,avgPriceWithBreakfast
+	,row_num				
+	)
+	SELECT hotel_id
+		  ,currency_id
+		  ,checkin_date
+		  ,checkout_date
+		  ,AVG(sellings_price) AS avgPriceWithBreakfast	  
+		  ,ROW_NUMBER() OVER (PARTITION BY hotel_id,currency_id ORDER BY checkin_date ASC) AS row_num	
+	FROM primary_data.offer (NOLOCK)
+	WHERE valid_offer_flag = 0
+	AND breakfast_included_flag = 0
+	AND DATEDIFF(DAY,checkin_date,checkout_date) = @forNumberOfDays
+	--AND hotel_id = 8075
+	GROUP BY hotel_id,currency_id,checkin_date,checkout_date
+	ORDER BY checkin_date
+
+
+	/*	case 4		*/
+
+	INSERT INTO #temp_checkOutlierWithBreakfastAndNoOffer
+	(
+	 hotel_id				
+	,currency_id				
+	,checkin_date			
+	,checkout_date			
+	,avgPriceWithBreakfast
+	,row_num				
+	)
+	SELECT hotel_id
+		  ,currency_id
+		  ,checkin_date
+		  ,checkout_date
+		  ,AVG(sellings_price) AS avgPriceWithBreakfast	  
+		  ,ROW_NUMBER() OVER (PARTITION BY hotel_id,currency_id ORDER BY checkin_date ASC) AS row_num	
+	FROM primary_data.offer (NOLOCK)
+	WHERE valid_offer_flag = 0
+	AND breakfast_included_flag = 1
+	AND DATEDIFF(DAY,checkin_date,checkout_date) = @forNumberOfDays
+	--AND hotel_id = 8075
+	GROUP BY hotel_id,currency_id,checkin_date,checkout_date
+	ORDER BY checkin_date
+
+
+	INSERT INTO #temp_finalChange
+	(
+	 hotel_id				
+	,currency_id			
+	,checkin_date			
+	,checkout_date			
+	,row_num				
+	,AvgPriceForCase		
+	,changePerCase			
+	,fromSource				
+	)
+	SELECT temp1.hotel_id
+	,temp1.currency_id
+	,temp1.checkin_date
+	,temp1.checkout_date
+	,temp1.row_num
+	,temp1.avgPriceWithBreakfast	
+	,CASE WHEN  temp1.avgPriceWithBreakfast = 0.00 THEN '100.00'
+		   ELSE ((temp1.avgPriceWithBreakfast - temp2.avgPriceWithBreakfast)/(temp1.avgPriceWithBreakfast))*100 END AS change
+	,'From Case 1' AS sourceTable
+	FROM #temp_checkOutlierWithBreakfastAndOffer AS temp1  (NOLOCK)
+	INNER JOIN #temp_checkOutlierWithBreakfastAndOffer AS temp2 (NOLOCK)
+		ON temp1.hotel_id = temp2.hotel_id
+		AND temp1.currency_id = temp2.currency_id
+		AND temp1.row_num = temp2.row_num - 1
+	UNION ALL	
+	SELECT temp1.hotel_id
+	,temp1.currency_id
+	,temp1.checkin_date
+	,temp1.checkout_date
+	,temp1.row_num
+	,temp1.avgPriceWithBreakfast	
+	,CASE WHEN  temp1.avgPriceWithBreakfast = 0.00 THEN '100.00'
+		   ELSE ((temp1.avgPriceWithBreakfast - temp2.avgPriceWithBreakfast)/(temp1.avgPriceWithBreakfast))*100 END AS change
+	,'From Case 2' AS sourceTable
+	FROM #temp_checkOutlierWithNoBreakfastAndOffer AS temp1  (NOLOCK)
+	INNER JOIN #temp_checkOutlierWithNoBreakfastAndOffer AS temp2 (NOLOCK)
+		ON temp1.hotel_id = temp2.hotel_id
+		AND temp1.currency_id = temp2.currency_id
+		AND temp1.row_num = temp2.row_num - 1
+	UNION ALL	
+	SELECT temp1.hotel_id
+	,temp1.currency_id
+	,temp1.checkin_date
+	,temp1.checkout_date
+	,temp1.row_num
+	,temp1.avgPriceWithBreakfast	
+	,CASE WHEN  temp1.avgPriceWithBreakfast = 0.00 THEN '100.00'
+		   ELSE ((temp1.avgPriceWithBreakfast - temp2.avgPriceWithBreakfast)/(temp1.avgPriceWithBreakfast))*100 END AS change
+	,'From Case 3' AS sourceTable
+	FROM #temp_checkOutlierWithNoBreakfastAndNoOffer AS temp1  (NOLOCK)
+	INNER JOIN #temp_checkOutlierWithNoBreakfastAndNoOffer AS temp2 (NOLOCK)
+		ON temp1.hotel_id = temp2.hotel_id
+		AND temp1.currency_id = temp2.currency_id
+		AND temp1.row_num = temp2.row_num - 1
+	UNION ALL	
+	SELECT temp1.hotel_id
+	,temp1.currency_id
+	,temp1.checkin_date
+	,temp1.checkout_date
+	,temp1.row_num
+	,temp1.avgPriceWithBreakfast	
+	,CASE WHEN  temp1.avgPriceWithBreakfast = 0.00 THEN '100.00'
+		   ELSE ((temp1.avgPriceWithBreakfast - temp2.avgPriceWithBreakfast)/(temp1.avgPriceWithBreakfast))*100 END AS change
+	,'From Case 4' AS sourceTable
+	FROM #temp_checkOutlierWithBreakfastAndNoOffer AS temp1  (NOLOCK)
+	INNER JOIN #temp_checkOutlierWithBreakfastAndNoOffer AS temp2 (NOLOCK)
+		ON temp1.hotel_id = temp2.hotel_id
+		AND temp1.currency_id = temp2.currency_id
+		AND temp1.row_num = temp2.row_num - 1
+
+
+	DROP TABLE #temp_checkOutlierWithBreakfastAndOffer
+	DROP TABLE #temp_checkOutlierWithNoBreakfastAndOffer
+	DROP TABLE #temp_checkOutlierWithNoBreakfastAndNoOffer
+	DROP TABLE #temp_checkOutlierWithBreakfastAndNoOffer
+
+
+	SELECT *
+	FROM  #temp_finalChange (NOLOCK)
+	WHERE changePerCase NOT BETWEEN @minChange AND @maxChange	
+
+	END TRY
+	BEGIN CATCH	
+		
+		PRINT('case wise outliers procedure failed,please check')
+		RETURN(-1)
+
+	END CATCH 
+
+	RETURN (0)
+END
+
+
+
+
+
+
+
+GO
+
+
