@@ -26,6 +26,6 @@ The order of looking at the files should be as follows :
 	importing a file on size 777 MB, I would not suggest a T-SQL Bulk Insert method. I would prefer
 	a SSIS approach. Let me know, would give the SSIS appraoch as well_**
 	
-5.  Folder Name : Stored-Procedures-to-populate-bi_data-tables:
-	5a.insert_into_hotel_offers : Stored procedure with all the required comments and logic to populate the hotel_offers table
-	5b. insert_into_valid_offers : Stored procedure to populate the valid_offers tables with all the required comments and                                      logic
+5.  **Folder Name : Stored-Procedures-to-populate-bi_data-tables:**
+     * insert_into_hotel_offers : Stored procedure with all the required comments and logic to populate the hotel_offers 		table
+     * insert_into_valid_offers : Stored procedure to populate the valid_offers tables with all the required comments and           logic
