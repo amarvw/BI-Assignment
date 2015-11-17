@@ -18,13 +18,13 @@ The order of looking at the files should be as follows :
     * offer_Outliers : The table used in the data cleaning process. The table has "comment" column, which tells about the 
       data issue and outliers.
 
-4.  Folder Name : Stored-Procedures-to-import_files :
-	4a. fx_rate	 : the stored procedure to import the fx_rate file on a daily basis
-	4b. lst_currency : the stored procedure to import the lst_currency file on a daily basis
+4.  **Folder Name : Stored-Procedures-to-import_files :**
+     * fx_rate	 : the stored procedure to import the fx_rate file on a daily basis
+     * lst_currency : the stored procedure to import the lst_currency file on a daily basis
 
-	There is no procedure to import the offer.csv file. The reason for the same being is that,
+	**_There is no procedure to import the offer.csv file. The reason for the same being is that,
 	importing a file on size 777 MB, I would not suggest a T-SQL Bulk Insert method. I would prefer
-	a SSIS approach. Let me know, would give the SSIS appraoch as well
+	a SSIS approach. Let me know, would give the SSIS appraoch as well_**
 	
 5.  Folder Name : Stored-Procedures-to-populate-bi_data-tables:
 	5a.insert_into_hotel_offers : Stored procedure with all the required comments and logic to populate the hotel_offers table
