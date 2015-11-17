@@ -20,5 +20,8 @@ Based on the data, the issues which I have found are as follow :
    having different valid_offer_flag flag, flagged such records as 'AMBIGUOUS RECORDS'
 6. In the **bi_data.getHotelPriceOutliers** procedure, we check for outliers when the change of selling_price for the same
    hotel_id ,currency_id (so that no conversion is needed) between the numberOfdays passed 
-   * The parameters
+   * The parameters are :
+      * @forNumberOfDays : no of days between checkin and check out
+      * @minChange : min change that is acceptable
+      * @maxChange   : max change that is acceptable
   
