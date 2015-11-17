@@ -18,4 +18,7 @@ Based on the data, the issues which I have found are as follow :
 4. Found some records where the currency_id does not exists in the lst_currency table, flagged them off as 'NO CURRENCY ID'
 5. Found some cases, where for the same hotel_id, offer_valid_from and offer_valid_to, we found multiple records
    having different valid_offer_flag flag, flagged such records as 'AMBIGUOUS RECORDS'
+6. In the **bi_data.getHotelPriceOutliers** procedure, we check for outliers when the change of selling_price for the same
+   hotel_id ,currency_id (so that no conversion is needed) between the numberOfdays passed 
+   * The parameters
   
