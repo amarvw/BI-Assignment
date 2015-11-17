@@ -1,9 +1,9 @@
 
 ##The Data Cleaning process :##
 
-From what I have seen in the offer.csv table, I have written the stored procedure
+**From what I have seen in the offer.csv table, I have written the stored procedure
 to highlight such records. Also the table [bi_data].[offer_Outliers] has all the required data.
-The comment column tells about the what the issue is with the particular record.
+The comment column tells about the what the issue is with the particular record.**
 
 Based on the data, the issues which I have found are as follow :
 
