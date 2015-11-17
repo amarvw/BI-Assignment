@@ -12,11 +12,11 @@ The order of looking at the files should be as follows :
     * lst_currency : The table creation script for the lst_currency, in the primary_data schema with all the required keys  	      and indexes
     * offer : The table creation script for the offer, in the primary_data schema with all the required keys and indexes
 	
-3.  Folder Name : bi_data-table-scripts :
-	3a. hotel_offers : The table script as per the requirement 
-	3b. valid_offers : The table script as per the requirement
-	3c. offer_Outliers : The table used in the data cleaning process. The table has "comment" column, which tells about the 
-						 data issue and outliers.
+3.  **Folder Name : bi_data-table-scripts :**
+    * hotel_offers : The table script as per the requirement 
+    * valid_offers : The table script as per the requirement
+    * offer_Outliers : The table used in the data cleaning process. The table has "comment" column, which tells about the 
+      data issue and outliers.
 
 4.  Folder Name : Stored-Procedures-to-import_files :
 	4a. fx_rate	 : the stored procedure to import the fx_rate file on a daily basis
